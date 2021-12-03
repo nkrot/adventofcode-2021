@@ -4,7 +4,6 @@
 #
 #
 
-import re
 import os
 import sys
 from typing import List
@@ -14,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
 
 
-DAY = '03'  # TODO
+DAY = '03'
 DEBUG = False
 
 
@@ -22,46 +21,44 @@ def count_bits(lines: List[str]):
     return [Counter(ln[i] for ln in lines) for i in range(len(lines[0]))]
 
 
+def count_bits_at(lines: List[str], idx: int):
+    return Counter(ln[idx] for ln in lines)
+
+
 def solve_p1(lines: List[str]) -> int:
     """Solution to the 1st part of the challenge"""
     gamma, epsilon = '', ''
     for bits in count_bits(lines):
-        g, e = bits.most_common(2)
-        gamma += g[0]
-        epsilon += e[0]
-    gr = int(gamma, 2)
-    er = int(epsilon, 2)
-    return gr * er
+        most, least = bits.most_common(2)  # ties are possible
+        gamma += most[0]
+        epsilon += least[0]
+    return int(gamma, 2) * int(epsilon, 2)
 
 
 def solve_p2(lines: List[str]) -> int:
     """Solution to the 2nd part of the challenge"""
-    ox_numbers = list(lines)
-    co2_numbers = list(lines)
 
-    for idx in range(len(lines[0])):
-        bits = count_bits(ox_numbers)
-        most, least = bits[idx].most_common(2)
-        target = '1' if most[1] == least[1] else most[0]
-        ox_numbers = [num for num in ox_numbers if num[idx] == target]
-        # print(ox_numbers)
-        if len(ox_numbers) == 1:
-            break
-    # print(ox_numbers)
+    def select(numbers: List[str], selector) -> str:
+        numbers = list(numbers)
+        for idx in range(len(numbers[0])):
+            target = selector(count_bits_at(numbers, idx))
+            numbers = [num for num in numbers if num[idx] == target]
+            if len(numbers) == 1:
+                break
+        return numbers.pop(0)
 
-    for idx in range(len(lines[0])):
-        bits = count_bits(co2_numbers)
-        most, least = bits[idx].most_common(2)
-        target = '0' if most[1] == least[1] else least[0]
-        co2_numbers = [num for num in co2_numbers if num[idx] == target]
-        # print(co2_numbers)
-        if len(co2_numbers) == 1:
-            break
-    # print(co2_numbers)
+    def most_frequent(counts: Counter) -> str:
+        most, least = counts.most_common(2)
+        return '1' if most[1] == least[1] else most[0]
 
-    oxr = int(ox_numbers[0], 2)
-    co2r = int(co2_numbers[0], 2)
-    return oxr * co2r
+    def least_frequent(counts: Counter) -> str:
+        most, least = counts.most_common(2)
+        return '0' if most[1] == least[1] else least[0]
+
+    ox = select(lines, most_frequent)
+    co2 = select(lines, least_frequent)
+
+    return int(ox, 2) * int(co2, 2)
 
 
 text_1 = """00100
