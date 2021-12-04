@@ -4,16 +4,15 @@
 #
 #
 
-import re
 import os
 import sys
-from typing import List
+from typing import List, Tuple
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
 
 DAY = '04'
-DEBUG = False
+DEBUG = not False
 
 
 class BingoBoard(object):
@@ -60,7 +59,7 @@ class BingoBoard(object):
         return s * k
 
 
-def parse_input(lines: List[str]):
+def parse_input(lines: List[str]) -> Tuple[List[int], List['BingoBoard']]:
     lines.append('')
     numbers, boards = [], []
     rows = []
@@ -70,26 +69,15 @@ def parse_input(lines: List[str]):
         elif line:
             rows.append(line)
         elif rows:
-            board = BingoBoard.from_lines(rows)
-            boards.append(board)
-            board.id = len(boards)
+            boards.append(BingoBoard.from_lines(rows))
             rows = []
+    for idx, board in enumerate(boards):
+        board.id = idx + 1
     return numbers, boards
 
 
-def solve_p1(lines: List[str]) -> int:
-    """Solution to the 1st part of the challenge"""
-    random_order, boards = parse_input(lines)
-    for draw in random_order:
-        for board in boards:
-            if board.mark(draw) and board.wins():
-                score = board.score(draw)
-                return score
-    return 0
-
-
-def solve_p2(lines: List[str]) -> int:
-    """Solution to the 2nd part of the challenge"""
+def solve_p1(lines: List[str], part=1) -> int:
+    """Solution to the 1st and the 2nd parts of the challenge"""
     random_order, boards = parse_input(lines)
     finished_boards = [False] * len(boards)
     score = 0
@@ -99,35 +87,22 @@ def solve_p2(lines: List[str]) -> int:
                 continue
             if board.mark(draw) and board.wins():
                 score = board.score(draw)
-                # print("Board {} wins at {} with score {}".format(
-                #     board.id, draw, score))
                 finished_boards[idx] = (board, score)
+                if DEBUG:
+                    print("Board {} wins at {} with score {}".format(
+                        board.id, draw, score))
+                if part == 1:
+                    return score
     return score
 
 
-text_1 = """7,4,9,5,11,17,23,2,0,14,21,24,10,16,13,6,15,25,12,22,18,20,8,19,3,26,1
-
-22 13 17 11  0
- 8  2 23  4 24
-21  9 14 16  7
- 6 10  3 18  5
- 1 12 20 15 19
-
- 3 15  0  2 22
- 9 18 13 17  5
-19  8  7 25 23
-20 11 10 24  4
-14 21 16 12  6
-
-14 21 17 24  4
-10 16 15  9 19
-18  8 23 26 20
-22 11 13  6  5
- 2  0 12  3  7"""
+def solve_p2(lines: List[str]) -> int:
+    """Solution to the 2nd part of the challenge"""
+    return solve_p1(lines, 2)
 
 
 tests = [
-    (text_1.split('\n'), 188 * 24, 148 * 13),
+    (utils.load_input('test.1.txt'), 188 * 24, 148 * 13),
 ]
 
 
