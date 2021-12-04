@@ -12,7 +12,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
 
 DAY = '04'
-DEBUG = not False
+DEBUG = False
 
 
 class BingoBoard(object):
@@ -59,6 +59,51 @@ class BingoBoard(object):
         return s * k
 
 
+class BingoBoard2(object):
+
+    # Approach
+    # 1) index by number: cells[number] = (x, y)
+    #    this will work because numbers ocur only once on a bingo board
+    # 2) marking a number as found means removing corresponding number from
+    #    the index.
+    # 3) for determining win condition, count how many times each column and
+    #    each row were "hit". A hit event happens a number is marked as found.
+    #    if a row was hit as many times as there are columns in it, then
+    #    said row is considered completed.
+    # 4) computing the score boils down to summing up keys that still remain
+    #    in the index.
+
+    @classmethod
+    def from_lines(cls, rows: List[str]):
+        numbers = [utils.to_numbers(row.split()) for row in rows]
+        return cls(numbers)
+
+    def __init__(self, rows: List[List[int]]):
+        self.width = len(rows[0])
+        self.height = len(rows)
+        self.cells = {rows[x][y] : (x, y)
+                        for x in range(self.height)
+                        for y in range(self.width)}
+        self.xhits = [self.width] * self.height
+        self.yhits = [self.height] * self.width
+        self.finished = False
+
+    def mark(self, target: int) -> bool:
+        xy = self.cells.pop(target, ())
+        if xy:
+            x, y = xy
+            self.xhits[x] -= 1
+            self.yhits[y] -= 1
+            self.finished = not(self.xhits[x]) or not(self.yhits[y])
+        return bool(xy)
+
+    def wins(self) -> bool:
+        return self.finished
+
+    def score(self, k: int) -> int:
+        return sum(self.cells.keys()) * k
+
+
 def parse_input(lines: List[str]) -> Tuple[List[int], List['BingoBoard']]:
     lines.append('')
     numbers, boards = [], []
@@ -69,7 +114,9 @@ def parse_input(lines: List[str]) -> Tuple[List[int], List['BingoBoard']]:
         elif line:
             rows.append(line)
         elif rows:
-            boards.append(BingoBoard.from_lines(rows))
+            #board = BingoBoard.from_lines(rows)
+            board = BingoBoard2.from_lines(rows)
+            boards.append(board)
             rows = []
     for idx, board in enumerate(boards):
         board.id = idx + 1
@@ -78,10 +125,10 @@ def parse_input(lines: List[str]) -> Tuple[List[int], List['BingoBoard']]:
 
 def solve_p1(lines: List[str], part=1) -> int:
     """Solution to the 1st and the 2nd parts of the challenge"""
-    random_order, boards = parse_input(lines)
+    draws, boards = parse_input(lines)
     finished_boards = [False] * len(boards)
     score = 0
-    for draw in random_order:
+    for draw in draws:
         for idx, board in enumerate(boards):
             if finished_boards[idx]:
                 continue
@@ -136,3 +183,4 @@ def run_real():
 if __name__ == '__main__':
     run_tests()
     run_real()
+
