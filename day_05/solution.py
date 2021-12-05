@@ -33,27 +33,29 @@ def parse_input(lines: List[str]) -> List[tuple]:
 
 def points_between(startp, endp):
     """Generate all points between given two points <startp> and <endp>."""
+
     def _step(s, e):
         return 1 if s <= e else -1
 
     x1, y1 = startp
     x2, y2 = endp
 
+    xrange = range(x1, x2, _step(x1, x2))
+    yrange = range(y1, y2, _step(y1, y2))
+
+    # x1, x2 = sorted([x1, x2])
+    # y1, y2 = sorted([y1, y2])
+    # use +1 to cover endp
+    # xrange = range(x1, 1+x2)
+    # yrange = range(y1, 1+y2)
+
+    if x1 == x2:
+        xrange = [x1] * len(yrange)
     if y1 == y2:
-        # horizontal line
-        for x in range(x1, x2, _step(x1, x2)):
-            yield((x, y1))
+        yrange = [y1] * len(xrange)
 
-    elif x1 == x2:
-        # vertical line
-        for y in range(y1, y2, _step(y1, y2)):
-            yield((x1, y))
-
-    else:
-        # diagonal line
-        for x, y in zip(range(x1, x2, _step(x1, x2)),
-                        range(y1, y2, _step(y1, y2))):
-            yield((x, y))
+    for x, y in zip(xrange, yrange):
+        yield((x, y))
 
     yield(endp)
 
@@ -68,12 +70,9 @@ def solve_p1(lines: List[str], part=1) -> int:
             # skip cases that are neither vertical nor horizontal
             continue
 
-        # print("Between", pt1, pt2)
         for pt in points_between(pt1, pt2):
-            # print("  ", pt)
             points[pt] += 1
 
-    # print(points)
     res = len([1 for pt, cnt in points.items() if cnt > 1])
 
     return res
