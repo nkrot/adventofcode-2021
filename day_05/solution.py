@@ -40,14 +40,11 @@ def points_between(startp, endp):
     x1, y1 = startp
     x2, y2 = endp
 
-    xrange = range(x1, x2, _step(x1, x2))
-    yrange = range(y1, y2, _step(y1, y2))
+    xstep = _step(x1, x2)
+    xrange = range(x1, x2 + xstep, xstep)
 
-    # x1, x2 = sorted([x1, x2])
-    # y1, y2 = sorted([y1, y2])
-    # use +1 to cover endp
-    # xrange = range(x1, 1+x2)
-    # yrange = range(y1, 1+y2)
+    ystep = _step(y1, y2)
+    yrange = range(y1, y2 + ystep, ystep)
 
     if x1 == x2:
         xrange = [x1] * len(yrange)
@@ -56,8 +53,6 @@ def points_between(startp, endp):
 
     for x, y in zip(xrange, yrange):
         yield((x, y))
-
-    yield(endp)
 
 
 def solve_p1(lines: List[str], part=1) -> int:
