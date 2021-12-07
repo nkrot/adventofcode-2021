@@ -22,23 +22,43 @@ def solve_p1(line: str) -> int:
     total_fuels = []
     for alpos in set(positions):
         total_fuels.append(sum(abs(alpos-pos) for pos in positions))
-    # print(total_fuels)
     return min(total_fuels)
 
 
 def solve_p2(line: str) -> int:
     """Solution to the 2nd part of the challenge"""
 
-    def compute_fuel(sp, ep):
+    #   | time -p |
+    # 1 | 17,01   |
+    # 2 |  0,50   | with memoization
+    # 3 |  0,48   | with more complex memoization
+
+    def compute_fuel_1(sp, ep):
         d = abs(sp - ep)
         return sum(range(1, 1+d))
+
+    def compute_fuel_2(sp, ep, memo={}):
+        d = abs(sp - ep)
+        if d not in memo:
+            memo[d] = sum(range(1, 1+d))
+        return memo[d]
+
+    def compute_fuel_3(sp, ep, memo={}):
+        d = abs(sp - ep)
+        if d not in memo:
+            _d = d - 1
+            if _d in memo:  # 638 times
+                memo[d] = memo[_d] + d
+            else:           # 1353 times
+                memo[d] = sum(range(1, 1+d))
+        return memo[d]
 
     positions = sorted(list(map(int, line.split(','))))
     mn, mx = utils.minmax(positions)
     total_fuels = []
     for alpos in range(mn, 1+mx):
-        total_fuels.append(sum(compute_fuel(alpos, pos) for pos in positions))
-    # print(total_fuels)
+        total_fuels.append(sum(compute_fuel_3(alpos, pos) for pos in positions))
+
     return min(total_fuels)
 
 
