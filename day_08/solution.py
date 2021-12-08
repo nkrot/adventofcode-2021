@@ -10,10 +10,9 @@
 # sys 0,09
 
 
-import re
 import os
 import sys
-from typing import List
+from typing import List, Tuple
 from collections import defaultdict
 from itertools import permutations
 
@@ -79,7 +78,7 @@ def decode(displays):
     for digit, segments in CODES.items():
         lengths[len(segments)].append(digit)
 
-    displays = [sortchars(d) for d in displays]
+    displays = [Cipher.sortchars(d) for d in displays]
 
     _displays = [(disp, lengths[len(disp)]) for disp in set(displays)]
 
@@ -87,15 +86,15 @@ def decode(displays):
 
     # printv(_displays)
 
-    cipher = decode_rec(_displays, {})[0]
+    cipher = decode_rec(_displays, Cipher())[0]
 
     # print(displays)
-    # print("CIPHER", cipher)
+    # print("CIPHER", type(cipher), cipher)
 
     n = 4
     res = 0
     for idx, disp in enumerate(reversed(displays[-n:])):
-        dec = meaning(disp, cipher)
+        dec = cipher.decode(disp)
         # print(disp, dec, type(dec))
         inc = int(dec) * (10 ** idx)
         res += inc
@@ -186,7 +185,7 @@ def decode_rec(displays: list, cipher: dict):
 def display_info(display, cipher, prefix=''):
     signal = display[0]
     print("{}Display {} --> {} --> {}".format(
-        prefix, display, deciphered(signal, cipher), meaning(signal, cipher)))
+        prefix, display, cipher.to_seg(signal), cipher.decode(signal)))
 
 
 def remove_decodable(displays, cipher):
@@ -195,7 +194,7 @@ def remove_decodable(displays, cipher):
     seen_values = []
     removed_ids = []
     for idx, disp in enumerate(displays):
-        decoded_value = meaning(disp[0], cipher)
+        decoded_value = cipher.decode(disp[0])
         # TODO: this is kinds shit that only the 1st occurrence is removed
         # this means that the items must be in the correct order
         if [decoded_value] == disp[1] and decoded_value not in seen_values:
@@ -208,26 +207,27 @@ def remove_decodable(displays, cipher):
     return selected, removed, removed_ids
 
 
-def deciphered(signal, cipher):
-    return "".join(cipher.get(ch, '?') for ch in signal)
-
-
-def meaning(signal, cipher):
-    dec = sortchars(deciphered(signal, cipher))
-    return DECODES.get(dec, None)
-
-
-def sortchars(s: str):
-    return "".join(sorted(list(s)))
-
-
 def extend_cipher(cipher: dict, code1: str, code2: str):
 
-    chars1 = [ch for ch in code1 if ch not in cipher.keys()]
-    chars2 = [ch for ch in code2 if ch not in cipher.values()]
+    chars1, chars2 = cipher.extract_unknown(code1, code2)
+    # print("New Pairs from", chars1, chars2)
+
+    # TODO: this is logically correct but the solved does not converge
+    # there can be a bug outside. W/o this rejectin condition, the original
+    # cipher is also returned.
+    # if not chars1:
+    if len(chars1) != len(chars2):
+        # or raise StopIteration
+        return
+
+    # print("..using")
 
     for chs in permutations(chars1, len(chars1)):
-        new_cipher = dict(cipher)
+        new_pairs = Cipher(zip(chs, chars2))
+        # print(new_pairs)
+        # &&& write it in a more compact way, perhaps moving the logic into Cipher
+        # cipher + new_pairs -> new_cipher or None
+        new_cipher = Cipher(cipher)
         ok = True
         for f, t in zip(chs, chars2):
             if f not in new_cipher:
@@ -236,6 +236,31 @@ def extend_cipher(cipher: dict, code1: str, code2: str):
                 ok = False
         if ok:
             yield new_cipher
+
+
+class Cipher(dict):
+
+    @classmethod
+    def sortchars(cls, signal: str):
+        return "".join(sorted(list(signal)))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def extract_unknown(self, src: str, trg: str) -> Tuple[List[str], List[str]]:
+        _src = [ch for ch in src if ch not in self.keys()]
+        _trg = [ch for ch in trg if ch not in self.values()]
+        return _src, _trg
+
+    def to_seg(self, signal: str):
+        """Convert signal to signal with segments rearranged.
+        Use ? for unknown segments.
+        """
+        return "".join(self.get(ch, '?') for ch in signal)
+
+    def decode(self, signal: str):
+        dec = self.sortchars(self.to_seg(signal))
+        return DECODES.get(dec, None)
 
 
 text_2 = "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"
