@@ -69,20 +69,15 @@ class Board(object):
 
 
 def find_lowest_points(heightmap):
-    higher_points = []
-    for pt in heightmap:
+
+    def is_lowest(pt):
         for npt in heightmap.neighbors_of(pt[0]):
             if pt[1] >= npt[1]:
-                higher_points.append(pt)
-                break
+                return False
+        return True
 
-    lowest_points = []
-    for pt in heightmap:
-        if pt not in higher_points:
-            lowest_points.append(pt)
-
+    lowest_points = list(filter(is_lowest, heightmap))
     return lowest_points
-
 
 
 def solve_p1(lines: List[str]) -> int:
