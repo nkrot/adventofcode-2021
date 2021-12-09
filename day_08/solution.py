@@ -1,10 +1,14 @@
 #!/usr/bin/env python
 
 # # #
-# TODO: refactor part 2 to make the solution readable
-# TODO: improve speed?
+# TODO: refactor decode_rec_old to make the solution readable
 #
-# time -p
+# time -p (decode)
+# real 0,33
+# user 0,30
+# sys 0,01
+#
+# time -p (decode2 + decode_rec_old)
 # real 45,43
 # user 45,00
 # sys 0,09
@@ -22,7 +26,7 @@ from aoc import utils
 
 
 DAY = '08'
-DEBUG = False
+DEBUG = True
 
 
 CODES = {
@@ -43,6 +47,48 @@ DECODES = {v: k for k,v in CODES.items()}
 assert len(CODES) == len(DECODES), "Shit happened"
 
 
+class Cipher(dict):
+
+    @classmethod
+    def sortchars(cls, signal: str):
+        return "".join(sorted(list(signal)))
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def extract_unknown(self, src: str, trg: str) -> Tuple[List[str], List[str]]:
+        _src = [ch for ch in src if ch not in self.keys()]
+        _trg = [ch for ch in trg if ch not in self.values()]
+        return _src, _trg
+
+    def to_seg(self, signal: str):
+        """Convert signal to signal with segments rearranged.
+        Use ? for unknown segments.
+        """
+        return "".join(self.get(ch, '?') for ch in signal)
+
+    def decode(self, signal: str):
+        dec = self.sortchars(self.to_seg(signal))
+        return DECODES.get(dec, None)
+
+    def update(self, other) -> bool:
+        """Return if update was successful"""
+        added = 0
+        for src, trg in other:
+            if src in self:
+                # do not allow overriding
+                return False
+            else:
+                self[src] = trg
+                added += 1
+        return added > 0
+
+
+def printv(items):
+    for item in items:
+        print(item)
+
+
 def solve_p1(lines: List[str]) -> int:
     """Solution to the 1st part of the challenge"""
     total = 0
@@ -53,11 +99,6 @@ def solve_p1(lines: List[str]) -> int:
         # print(output_values)
         total += sum(1 for v in output_values if len(v) in {2,4,3,7})
     return total
-
-
-def printv(items):
-    for item in items:
-        print(item)
 
 
 def solve_p2(lines: List[str]) -> int:
@@ -71,12 +112,78 @@ def solve_p2(lines: List[str]) -> int:
     return s
 
 
-def decode(displays):
-    # print(displays)
+def read_displays(cipher, displays):
+    n = len(displays)
+    res = 0
+    for idx, disp in enumerate(reversed(displays)):
+        dec = cipher.decode(disp)
+        inc = int(dec) * (10 ** idx)
+        res += inc
+    return res
 
+
+def candidates_by_length():
     lengths = defaultdict(list)
     for digit, segments in CODES.items():
         lengths[len(segments)].append(digit)
+    return lengths
+
+
+def decode(displays):
+    """
+    Details
+    1) a Cipher is a mapping of segments
+    2) generate all possible ciphers and select those that can *fully* decode
+       *all* displays to something meaningful.
+    3) if necessary, check that selected cipher(s) decode(s) the displays to
+       expected digit(s).
+    4) Expected digits are computed based on the number of active segments
+       on a display and the number of segments that must be active to indicate
+       each of the digits. This is in <candidates>
+    """
+
+    # print(displays)
+
+    # We will need it to suggest candidate digits for each 7-segment display:
+    # the number of active segments corresponds to one or more possible digits.
+    candidates = candidates_by_length()
+
+    segments = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+    readings = []
+
+    # (2) generate all posisble ciphers
+    for perm in permutations(segments, len(segments)):
+        cipher = Cipher(zip(segments, perm))
+        decoded = [cipher.decode(d) for d in displays]
+
+        # (2) the cipher that fails to decode *all* items is not suitable
+        if None in decoded:
+            continue
+
+        # print(cipher)
+        # print(decoded)
+        # print("OK")
+
+        # (3) Additionally check that the cipher decodes displays correctly:
+        # For each display, we know a short list of numbers it can represent.
+        # Here we check if decoded number is among those candidate numbers.
+        checks = [dec in candidates[len(disp)]
+                  for disp, dec in zip(displays, decoded)]
+
+        if all(checks):
+            reading = read_displays(cipher, displays[-4:])
+            readings.append(reading)
+
+    assert len(readings) == 1, "Expecting a single output from the displays"
+
+    return readings[0]
+
+
+def decode2(displays):
+    # TODO: unfinished refactoring of decode_rec
+    print(displays)
+
+    lengths = candidates_by_length()
 
     displays = [Cipher.sortchars(d) for d in displays]
 
@@ -86,8 +193,10 @@ def decode(displays):
 
     # printv(_displays)
 
-    cipher = decode_rec(_displays, Cipher())[0]
+    ciphers = []
+    decode_rec(_displays, Cipher(), ciphers)
 
+    return 0
     # print(displays)
     # print("CIPHER", type(cipher), cipher)
 
@@ -106,13 +215,43 @@ def decode(displays):
 DEPTH = 0
 
 def decode_rec(displays: list, cipher: dict):
+    """An attempt to refactor decode_rec_old"""
     global DEPTH
     DEPTH += 1
 
-    # print(f"--- LEVEL {DEPTH} ---")
-    # print("Number of displays: {};".format(len(displays)))
-    # printv(displays)
-    # print("Cipher state {}: {}".format(len(cipher), cipher))
+    if DEBUG:
+        print(f"--- LEVEL {DEPTH} ---")
+        print("Number of displays: {};".format(len(displays)))
+        printv(displays)
+        print("Cipher state {}: {}".format(len(cipher), cipher))
+
+    if not displays:
+        print("DONE", cipher)
+        return [cipher]
+
+    current = displays.pop(0)
+    display_info(current, cipher, "Checking ")
+
+    signal, digits = current
+
+    if len(digits) == 1:
+        digit = digits[0]
+        for _cipher in extend_cipher(cipher, signal, CODES[digit]):
+            print(_cipher)
+
+    return [cipher] # fake
+
+
+def decode_rec_old(displays: list, cipher: dict, *args):
+    """works but is ugly and needs to be refactored"""
+    global DEPTH
+    DEPTH += 1
+
+    if DEBUG:
+        print(f"--- LEVEL {DEPTH} ---")
+        print("Number of displays: {};".format(len(displays)))
+        printv(displays)
+        print("Cipher state {}: {}".format(len(cipher), cipher))
 
     # remove cases that can be fully decoded
     # TODO: the order of <displays> is important
@@ -209,6 +348,9 @@ def remove_decodable(displays, cipher):
 
 def extend_cipher(cipher: dict, code1: str, code2: str):
 
+    if DEBUG:
+        print(".. extending from {} and {}".format(code1, code2))
+
     chars1, chars2 = cipher.extract_unknown(code1, code2)
     # print("New Pairs from", chars1, chars2)
 
@@ -223,11 +365,17 @@ def extend_cipher(cipher: dict, code1: str, code2: str):
     # print("..using")
 
     for chs in permutations(chars1, len(chars1)):
-        new_pairs = Cipher(zip(chs, chars2))
+        # print(chs, len(chars1))
+        # new_pairs = Cipher(zip(chs, chars2))
         # print(new_pairs)
-        # &&& write it in a more compact way, perhaps moving the logic into Cipher
-        # cipher + new_pairs -> new_cipher or None
         new_cipher = Cipher(cipher)
+
+        # TODO:
+        # if new_cipher.update(zip(chs, chars2))
+        #     yield new_cipher
+
+        # TODO: there is a bug here, ok is true (and new_cipher is returned)
+        # even if new_cipher is equal to cipher (update was zero)
         ok = True
         for f, t in zip(chs, chars2):
             if f not in new_cipher:
@@ -235,32 +383,8 @@ def extend_cipher(cipher: dict, code1: str, code2: str):
             else:
                 ok = False
         if ok:
+            # print("yield", new_cipher)
             yield new_cipher
-
-
-class Cipher(dict):
-
-    @classmethod
-    def sortchars(cls, signal: str):
-        return "".join(sorted(list(signal)))
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-    def extract_unknown(self, src: str, trg: str) -> Tuple[List[str], List[str]]:
-        _src = [ch for ch in src if ch not in self.keys()]
-        _trg = [ch for ch in trg if ch not in self.values()]
-        return _src, _trg
-
-    def to_seg(self, signal: str):
-        """Convert signal to signal with segments rearranged.
-        Use ? for unknown segments.
-        """
-        return "".join(self.get(ch, '?') for ch in signal)
-
-    def decode(self, signal: str):
-        dec = self.sortchars(self.to_seg(signal))
-        return DECODES.get(dec, None)
 
 
 text_2 = "acedgfb cdfbe gcdfa fbcad dab cefabd cdfgeb eafb cagedb ab | cdfeb fcadb cdfeb cdbaf"
@@ -302,4 +426,4 @@ def run_real():
 
 if __name__ == '__main__':
     run_tests()
-    run_real()
+    # run_real()
