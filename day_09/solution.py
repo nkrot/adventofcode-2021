@@ -110,14 +110,32 @@ def find_basin(heightmap, lowest):
     return basin
 
 
+def find_basin2(heightmap, lowest):
+    """Recursive implementation"""
+
+    def fill_basin(pt, basin, seen_points):
+        for npt in heightmap.neighbors_of(pt[0]):
+            if npt in seen_points:
+                continue
+            seen_points.add(npt)
+            if lowest[1] <= npt[1] < 9:
+                basin.append(npt)
+                fill_basin(npt, basin, seen_points)
+
+    basin = []
+    fill_basin(lowest, basin, set())
+
+    return basin
+
+
 def solve_p2(lines: List[str]) -> int:
     """Solution to the 2nd part of the challenge"""
     heightmap = Board.from_lines(lines)
 
     sizes = []
     for pt in find_lowest_points(heightmap):
-        basin = find_basin(heightmap, pt)
-        # print(len(basin), basin)
+        # basin = find_basin(heightmap, pt)
+        basin = find_basin2(heightmap, pt)
         sizes.append(len(basin))
 
     area3 = reduce(lambda a, b: a*b, sorted(sizes)[-3:], 1)
