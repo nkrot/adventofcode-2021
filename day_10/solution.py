@@ -49,12 +49,15 @@ class Stack(object):
         return "".join(self.items)
 
 
-def analyse(record: str) -> Union[Tuple[int, str], Stack]:
-    """Return either the 1st non-balanced symbol as Tuple[idx, symbol] or
-    the whole stack after traversing record. If the record is complete,
-    returned stack will be empty, otherwise it will contain a sequence of
-    characters necessary to complement the record.
+def analyse(record: str) -> Tuple[str, Stack]:
+    """Check the record for balance of brackets and return a tuple of two:
+    1) the 1st imbalanced character if the record is corrupted or None if
+       the record is balanced (= not corrupted)
+    2) the stack after traversing the whole record. If the record is complete,
+       the stack will be empty. If the record is incomplete and not corrupted,
+       the stack will contain characters necessary to complement the record.
     """
+    bad = None
     st = Stack()
     for idx, ch in enumerate(record):
         # print(idx, ch)
@@ -63,17 +66,18 @@ def analyse(record: str) -> Union[Tuple[int, str], Stack]:
         else:
             exp = st.pop()
             if exp != ch:
-                return (idx, ch)
-    return st
+                bad = ch
+                break
+    return bad, st
 
 
 def solve_p1(lines: List[str]) -> int:
     """Solution to the 1st part of the challenge"""
     score = 0
     for line in lines:
-        res = analyse(line)
-        if isinstance(res, tuple):
-            score += SCORES[res[1]][0]
+        imbalanced, _ = analyse(line)
+        if imbalanced:
+            score += SCORES[imbalanced][0]
     return score
 
 
@@ -81,9 +85,9 @@ def solve_p2(lines: List[str]) -> int:
     """Solution to the 2nd part of the challenge"""
     scores = []
     for line in lines:
-        res = analyse(line)
-        if isinstance(res, Stack) and res:
-            score = reduce(lambda a, b: a*5+SCORES[b][1], res.items, 0)
+        imbalanced, st = analyse(line)
+        if not imbalanced and st:
+            score = reduce(lambda a, b: a*5+SCORES[b][1], st.items, 0)
             # print(res, score)
             scores.append(score)
 
