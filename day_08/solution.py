@@ -151,7 +151,7 @@ def decode(displays):
     segments = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
     readings = []
 
-    # (2) generate all posisble ciphers
+    # (2) generate all possible ciphers
     for perm in permutations(segments, len(segments)):
         cipher = Cipher(zip(segments, perm))
         decoded = [cipher.decode(d) for d in displays]
