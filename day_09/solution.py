@@ -50,6 +50,10 @@ class Board(object):
         lines = ["".join(map(str, row)) for row in self.rows]
         return "\n".join(lines)
 
+    def __len__(self):
+        """Total number of cells on the board"""
+        return len(self.rows) * len(self.rows[0])
+
     def neighbors_of(self, xy):
         x, y = xy
         for dx, dy in self.AROUND:
