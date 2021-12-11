@@ -4,7 +4,6 @@
 #
 #
 
-import re
 import os
 import sys
 from typing import List, Tuple
@@ -19,7 +18,11 @@ DEBUG = False
 
 class Board(object):
 
-    AROUND = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    # Coordinate offsets to access points around another point
+    SIDES = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+    CORNERS = [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+
+    AROUND = sorted(SIDES)
 
     @classmethod
     def from_lines(cls, lines: List[str]):
@@ -141,14 +144,16 @@ def find_basin2(heightmap, lowest):
     return basin
 
 
-def solve_p2(lines: List[str]) -> int:
+def solve_p2(lines: List[str], version=1) -> int:
     """Solution to the 2nd part of the challenge"""
     heightmap = Board.from_lines(lines)
 
     sizes = []
     for pt in find_lowest_points(heightmap):
-        # basin = find_basin(heightmap, pt)
-        basin = find_basin2(heightmap, pt)
+        if version == 1:
+            basin = find_basin(heightmap, pt)
+        elif version == 2:
+            basin = find_basin2(heightmap, pt)
         sizes.append(len(basin))
 
     area3 = reduce(lambda a, b: a*b, sorted(sizes)[-3:], 1)
@@ -180,6 +185,10 @@ def run_tests():
         if exp2 is not None:
             res2 = solve_p2(inp)
             print(f"T2.{tid}:", res2 == exp2, exp2, res2)
+
+        if exp2 is not None:
+            res2 = solve_p2(inp, 2)
+            print(f"T2.{tid}.v2:", res2 == exp2, exp2, res2)
 
 
 def run_real():

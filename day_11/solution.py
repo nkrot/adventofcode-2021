@@ -16,7 +16,7 @@ from day_09.solution import Board
 DAY = '11'
 DEBUG = False
 
-Board.AROUND.extend([(-1, -1), (-1, +1), (+1, -1), (+1, +1)])
+Board.AROUND = Board.SIDES + Board.CORNERS
 assert len(set(Board.AROUND)) == 8,  "Wrong number of neighbor coordinates"
 
 
