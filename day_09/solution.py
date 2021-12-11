@@ -7,7 +7,7 @@
 import re
 import os
 import sys
-from typing import List
+from typing import List, Tuple
 from functools import reduce
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -38,8 +38,17 @@ class Board(object):
             return self.rows[x][y]
         return None
 
+    def __setitem__(self, pos: Tuple[int, int], val):
+        x, y = pos
+        if self[x, y] is not None:
+            self.rows[x][y] = val
+
     def __iter__(self):
         return self.BoardIterator(self)
+
+    def __str__(self):
+        lines = ["".join(map(str, row)) for row in self.rows]
+        return "\n".join(lines)
 
     def neighbors_of(self, xy):
         x, y = xy
