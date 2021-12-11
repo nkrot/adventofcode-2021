@@ -52,7 +52,8 @@ def flash_octopus(octopuses: Board, current, flashed_octopuses):
 
 
 def tick(octopuses: Board):
-    """one moment in time"""
+    """what happens at a single moment in time, kinda simulateneously"""
+
     c_flashes = 0
 
     # update all by 1
@@ -73,6 +74,7 @@ def tick(octopuses: Board):
 def solve_p1(lines: List[str], steps=1) -> int:
     """Solution to the 1st part of the challenge"""
     cavern = Board.from_lines(lines)
+
     if DEBUG:
         print("--- Before ---")
         print(cavern)
@@ -91,8 +93,11 @@ def solve_p1(lines: List[str], steps=1) -> int:
 
 def solve_p2(lines: List[str]) -> int:
     """Solution to the 2nd part of the challenge"""
-    # TODO
-    return 0
+    cavern = Board.from_lines(lines)
+    c_steps = 1
+    while tick(cavern) != len(cavern):
+        c_steps += 1
+    return c_steps
 
 
 text_1 = """11111
@@ -105,7 +110,7 @@ text_1 = """11111
 
 tests = [
     ((text_1.split('\n'), 2), 9, None),
-    ((utils.load_input('test.2.txt'), 10), 204, None),
+    ((utils.load_input('test.2.txt'), 10), 204, 195),
     ((utils.load_input('test.2.txt'), 100), 1656, None)
 ]
 
@@ -119,7 +124,7 @@ def run_tests():
             print(f"T1.{tid}:", res1 == exp1, exp1, res1)
 
         if exp2 is not None:
-            res2 = solve_p2(inp)
+            res2 = solve_p2(inp[0])
             print(f"T2.{tid}:", res2 == exp2, exp2, res2)
 
 
@@ -132,7 +137,7 @@ def run_real():
     print(exp1 == res1, exp1, res1)
 
     print(f"--- Day {DAY} p.2 ---")
-    exp2 = -1
+    exp2 = 237
     res2 = solve_p2(lines)
     print(exp2 == res2, exp2, res2)
 
