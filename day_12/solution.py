@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 
 # # #
-#
-#
+# TODO: improve speed in p.2
+# + do not use exceptions? -- saves 1 second
+# + use deque instead of mere list -- saves 5 seconds
+# + count paths directly instead of accumulating and then counting -- saves <1 s
+# - rethink checking for visited small caves. counting them seems to be taking lot of time
 
 import re
 import os
 import sys
 from typing import List, Dict
-from collections import defaultdict, Counter
+from collections import defaultdict, Counter, deque
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
@@ -51,9 +54,9 @@ class GPath(object):
         return self.last == 'end'
 
     def __add__(self, node):
-        if self._can_be_added(node):
-            return self.__class__(self.nodes + [node])
-        raise GraphPathException(f"Cannot add node {node} to path")
+        # if not self._can_be_added(node):
+        #     raise GraphPathException(f"Cannot add node {node} to path")
+        return self.__class__(self.nodes + [node])
 
     def __str__(self):
         return ",".join(self.nodes)
@@ -90,43 +93,43 @@ class GPath2(GPath):
         return True
 
 
-def find_paths(graph, PathClass) -> list:
+def count_paths(graph, PathClass) -> int:
 
-    paths = [ PathClass("start") ]
+    paths = deque([PathClass("start")])
     full_paths = []
+    c_full_paths = 0
 
     # BFS to build all paths betweeb <start> and <end> nodes
     while paths:
-        path = paths.pop(0)
+        path = paths.popleft()
         for trg in graph[path.last]:
-            try:
+            if path._can_be_added(trg):
                 newpath = path + trg
                 if newpath.is_full():
-                    full_paths.append(newpath)
+                    # full_paths.append(newpath)
+                    c_full_paths += 1
                 else:
                     paths.append(newpath)
-            except GraphPathException:
-                # print("Oh shit", path, trg)
-                pass
+            # except GraphPathException:
+            #     # print("Oh shit", path, trg)
+            #     pass
 
-    if DEBUG:
-        print("--- Full paths ---")
-        for p in full_paths:
-            print(p)
+    # if DEBUG:
+    #     print("--- Full paths ---")
+    #     for p in full_paths:
+    #         print(p)
 
-    return full_paths
+    return c_full_paths
 
 
 def solve_p1(lines: List[str]) -> int:
     """Solution to the 1st part of the challenge"""
-    paths = find_paths(build_graph(lines), GPath)
-    return len(paths)
+    return count_paths(build_graph(lines), GPath)
 
 
 def solve_p2(lines: List[str]) -> int:
     """Solution to the 2nd part of the challenge"""
-    paths = find_paths(build_graph(lines), GPath2)
-    return len(paths)
+    return count_paths(build_graph(lines), GPath2)
 
 
 tests = [
