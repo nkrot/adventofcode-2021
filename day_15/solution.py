@@ -2,6 +2,8 @@
 
 # # #
 #
+# TODO
+# 1. try using heapq instead of PriorityQueue. what is faster?
 #
 
 import re
@@ -24,7 +26,7 @@ def compute_risks(board, startp, endp):
     # came_from = {startp: None}
     risk_so_far = {startp: 0}
 
-    frontier = PriorityQueue()
+    frontier = PriorityQueue()  # lowest first
     frontier.put((0, startp))
 
     while frontier.qsize():
