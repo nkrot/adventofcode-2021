@@ -30,13 +30,8 @@ def solve_p2(lines: List[str]) -> int:
     return 0
 
 
-text_1 = """hello
-yellow
-melon"""
-
-
 tests = [
-    # (text_1.split('\n'), exp1, exp2),
+    # (utils.load_input('test.1.txt'), exp1, exp2),
     # TODO
 ]
 
