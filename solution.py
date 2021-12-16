@@ -42,11 +42,11 @@ def run_tests():
     for tid, (inp, exp1, exp2) in enumerate(tests):
         if exp1 is not None:
             res1 = solve_p1(inp)
-            print(f"T1.{tid}:", res1 == exp1, exp1, res1)
+            print(f"T.{tid}.p1:", res1 == exp1, exp1, res1)
 
         if exp2 is not None:
             res2 = solve_p2(inp)
-            print(f"T2.{tid}:", res2 == exp2, exp2, res2)
+            print(f"T.{tid}.p2:", res2 == exp2, exp2, res2)
 
 
 def run_real():
