@@ -99,9 +99,9 @@ def test_target_area():
 
 
 def launch(probe: Probe, target_area: TargetArea) -> bool:
-    """Launch give probe and move it until it is clear whether it hit given
+    """Launch given probe and move it until it is clear whether it hit given
     <target_area> or overshot. Return True if the probe hit the target area,
-    otehrwise return False.
+    otherwise return False.
     """
     if DEBUG > 2:
         print("--- Launching ---")
@@ -127,7 +127,7 @@ def get_vx_range(area) -> Tuple[int, int]:
     closest, farthest = area.xspan
     min_vx, max_vx = 0, farthest
     for vx in range(min_vx, 1+max_vx):
-        reach = sum(range(1, 1+vx))
+        reach = vx*(vx+1) / 2  # 1+2+...vx
         if reach >= closest:
             min_vx = vx
             break
