@@ -7,13 +7,14 @@
 import re
 import os
 import sys
-from typing import List, Tuple
+from typing import List, Tuple, Generator
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
 
 DAY = '17'
 DEBUG = int(os.environ.get('DEBUG', 0))
+T_VELOCIY = Tuple[int, int]  # x-velocity, y-velocity
 
 
 class TargetArea(object):
@@ -36,16 +37,6 @@ class TargetArea(object):
         x, y = point.xy if isinstance(point, Probe) else point
         return (self.xspan[0] <= x <= self.xspan[1]
                 and self.yspan[0] <= y <= self.yspan[1])
-
-    # @property
-    # def tl(self):
-    #     """top left corner"""
-    #     return (self.xspan[0], self.yspan[1])
-
-    # @property
-    # def br(self):
-    #     """bottom right corner"""
-    #     return (self.xspan[1], self.yspan[0])
 
     @property
     def lower_y(self):
@@ -108,6 +99,10 @@ def test_target_area():
 
 
 def launch(probe: Probe, target_area: TargetArea) -> bool:
+    """Launch give probe and move it until it is clear whether it hit given
+    <target_area> or overshot. Return True if the probe hit the target area,
+    otehrwise return False.
+    """
     if DEBUG > 2:
         print("--- Launching ---")
         print(probe)
@@ -127,7 +122,7 @@ def launch(probe: Probe, target_area: TargetArea) -> bool:
 def get_vx_range(area) -> Tuple[int, int]:
     """Find minimal and maximal horizontal speeds that make sense, such that
     a) min speed is sufficient to reach the left edge of the target area
-    b) max speed does not lead to overshooting
+    b) max speed does not lead to overshooting (not always the best speed)
     """
     closest, farthest = area.xspan
     min_vx, max_vx = 0, farthest
@@ -139,29 +134,61 @@ def get_vx_range(area) -> Tuple[int, int]:
     return (min_vx, max_vx)
 
 
-def velocities_p1_1(area):
-    closest_x, _ = area.xspan
+def velocities_p1_1(area) -> Generator[T_VELOCIY, None, None]:
+    """Generate possible initial velocity parameters for the probes in part 1.
+    """
+    closest_x, farthest_x = area.xspan
     min_vx, max_vx = get_vx_range(area)
-    # TODO: max_vx can be lower than the one computed above. The one computed
-    # above is for the case when the probe reaches the target area in *one* step
-    # with vertical speed being equal to 0. This is not true for part 1 because
-    # in part 1 the probe needs to *climb* to reach max altitude.
-    for vx in range(min_vx, 1+max_vx):
-        max_vy = closest_x-vx  # TODO: is it true?
+    # max_vx can be lower than the one computed above. The one computed
+    # above is for the case when the probe reaches the target area in *one*
+    # step with vertical speed being equal to 0. This is not true for part 1
+    # because in part 1 the probe needs to *climb* to reach max altitude.
+    # Therefore:
+    max_vx = farthest_x // 2
+    for vx in range(min_vx, max_vx):
+        max_vy = closest_x - vx  # TODO: just guessing. explain?
         for vy in range(1, max_vy):
             yield vx, vy
 
 
-def velocities_p2_1(area):
+def velocities_p2_1(area) -> Generator[T_VELOCIY, None, None]:
+    """Generate possible initial velocity parameters for the probes in part 2.
+    """
+    closest_x, farthest_x = area.xspan
     min_vx, max_vx = get_vx_range(area)
-    # _, miny = area.br
-    for vx in range(min_vx, 1+max_vx):
-        for vy in range(area.lower_y, 100):
+
+    # case 1: points in area that can be reached in more than one step
+    max_vx = (1 + farthest_x) // 2  # anything larger will x-overshoot at any
+                                    # step larger than 2.
+    min_vy = 1 + area.lower_y // 2  # anything larger will y-overshoot (be
+                                    # below the lowest side of the target area)
+                                    # at any step large than 2
+    max_vy = closest_x  # TODO: actually, lower
+    if DEBUG > 1:
+        print("Velocity range hor [{},{}] and vert [{},{}]".format(
+            min_vx, max_vx, min_vy, max_vy))
+    for vx in range(min_vx, max_vx+1):
+        for vy in range(min_vy, max_vy+1):
+            yield vx, vy
+
+    # case 2: points in the target area can be reached within one step:
+    # velocities are simply coordinates of the points.
+    min_vx, max_vx = area.xspan
+    min_vy, max_vy = area.yspan
+    if DEBUG > 1:
+        print("Velocity range hor [{},{}] and vert [{},{}]".format(
+            min_vx, max_vx, min_vy, max_vy))
+    for vx in range(min_vx, max_vx+1):
+        for vy in range(min_vy, max_vy+1):
             yield vx, vy
 
 
 @utils.mytimeit
 def run_simulations(area, velocities) -> Tuple[Probe, int]:
+    """Lauch probes for each of the initial velocities from <velocities> and
+    return best probe (for part 1) as well as the total number of probes that
+    reached the target area (part 2).
+    """
     best = None
     c_probes = 0
     c_successful_probes = 0
@@ -172,8 +199,8 @@ def run_simulations(area, velocities) -> Tuple[Probe, int]:
         if success:
             c_successful_probes += 1
             if DEBUG > 1:
-                print("Success? {} with initial velocity {} reaches max altitude {}:".format(
-                    success, (vx,vy), probe.max_altitude))
+                print("Success: initial velocity {} --> max altitude {}".format(
+                    (vx,vy), probe.max_altitude))
             if not best or best.max_altitude < probe.max_altitude:
                 best = probe
     if DEBUG > 0:
