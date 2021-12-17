@@ -39,3 +39,39 @@ def to_numbers(lines: List[str]) -> List[int]:
 def minmax(numbers: List[int]) -> Tuple[int, int]:
     """Return min and max values from given list of integers"""
     return (min(numbers), max(numbers))
+
+# Source
+# https://stackoverflow.com/questions/55774054/precise-time-in-nano-seconds-for-python-3-6-and-earlier
+
+import ctypes
+
+CLOCK_REALTIME = 0
+
+class timespec(ctypes.Structure):
+    _fields_ = [
+        ('tv_sec', ctypes.c_int64), # seconds, https://stackoverflow.com/q/471248/1672565
+        ('tv_nsec', ctypes.c_int64), # nanoseconds
+    ]
+
+clock_gettime = ctypes.cdll.LoadLibrary('libc.so.6').clock_gettime
+clock_gettime.argtypes = [ctypes.c_int64, ctypes.POINTER(timespec)]
+clock_gettime.restype = ctypes.c_int64
+
+
+def time_ns():
+    tmp = timespec()
+    ret = clock_gettime(CLOCK_REALTIME, ctypes.pointer(tmp))
+    if bool(ret):
+        raise OSError()
+    return tmp.tv_sec * 10 ** 9 + tmp.tv_nsec
+
+
+def mytimeit(func, n=1):
+    """A decorator to measure runtime of a function in nanoseconds"""
+    def wrapper(*args, **kwargs):
+        start = time_ns()
+        res = func(*args, **kwargs)
+        end = time_ns()
+        print("Runtime[{}]: {} nsec".format(func.__name__, end-start))
+        return res
+    return wrapper
