@@ -15,7 +15,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
 
 DAY = 'DD'  # TODO
-DEBUG = False
+DEBUG = int(os.environ.get('DEBUG', 0))
 
 
 def solve_p1(lines: List[str]) -> int:
