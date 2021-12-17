@@ -13,7 +13,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 from aoc import utils
 
 DAY = '17'
-DEBUG = False
+DEBUG = int(os.environ.get('DEBUG', 0))
 
 
 class TargetArea(object):
@@ -24,6 +24,8 @@ class TargetArea(object):
         assert m, f"Failed to parse: {line}"
         xspan = (int(m[1]), int(m[2]))
         yspan = (int(m[3]), int(m[4]))
+        # an alternative to get all numbers from the line
+        # numbers = list(map(int, filter(len, re.split('[^\d-]+', line))))
         return cls(xspan, yspan)
 
     def __init__(self, xspan, yspan):
@@ -32,22 +34,22 @@ class TargetArea(object):
 
     def __contains__(self, point) -> bool:
         x, y = point.xy if isinstance(point, Probe) else point
-        return (self.xspan[0] <= x <= self.xspan[1] 
+        return (self.xspan[0] <= x <= self.xspan[1]
                 and self.yspan[0] <= y <= self.yspan[1])
 
-    @property
-    def tl(self):
-        """top left corner"""
-        return (self.xspan[0], self.yspan[1])
+    # @property
+    # def tl(self):
+    #     """top left corner"""
+    #     return (self.xspan[0], self.yspan[1])
+
+    # @property
+    # def br(self):
+    #     """bottom right corner"""
+    #     return (self.xspan[1], self.yspan[0])
 
     @property
-    def br(self):
-        """bottom right corner"""
-        return (self.xspan[1], self.yspan[0])
-        
-    @property
     def lower_y(self):
-        return min(self.yspan)
+        return self.yspan[0]
 
 
 class Probe(object):
@@ -96,7 +98,7 @@ def test_target_area():
             (20, -10), (20, -5), (30, -10), (30, -5)]
     for loc in hits:
         assert loc in area, f"Must be inside: {loc}"
-    
+
     misses = [(20, -4), (20, -11)]
     for loc in misses:
         assert loc not in area, f"Must be outside: {loc}"
@@ -104,71 +106,93 @@ def test_target_area():
 
 # test_target_area()
 
+
 def launch(probe: Probe, target_area: TargetArea) -> bool:
-    if DEBUG:
+    if DEBUG > 2:
         print("--- Launching ---")
         print(probe)
     success = False
     while True:
         probe.move()
         success = probe in target_area
-        if DEBUG:
+        if DEBUG > 2:
             print(probe, success)
         if success or probe.y < target_area.lower_y:
             break
-    if DEBUG:
+    if DEBUG > 2:
         print("Success?", success)
     return success
 
 
-# TODO: there must be a better method of computing velocities
-def velocities_1(area):
-    # for now just brute force solution
-    maxx, _ = area.tl
-    for vx in range(0, area.tl[0]):
-        for vy in range(1, maxx-vx):
+def get_vx_range(area) -> Tuple[int, int]:
+    """Find minimal and maximal horizontal speeds that make sense, such that
+    a) min speed is sufficient to reach the left edge of the target area
+    b) max speed does not lead to overshooting
+    """
+    closest, farthest = area.xspan
+    min_vx, max_vx = 0, farthest
+    for vx in range(min_vx, 1+max_vx):
+        reach = sum(range(1, 1+vx))
+        if reach >= closest:
+            min_vx = vx
+            break
+    return (min_vx, max_vx)
+
+
+def velocities_p1_1(area):
+    closest_x, _ = area.xspan
+    min_vx, max_vx = get_vx_range(area)
+    # TODO: max_vx can be lower than the one computed above. The one computed
+    # above is for the case when the probe reaches the target area in *one* step
+    # with vertical speed being equal to 0. This is not true for part 1 because
+    # in part 1 the probe needs to *climb* to reach max altitude.
+    for vx in range(min_vx, 1+max_vx):
+        max_vy = closest_x-vx  # TODO: is it true?
+        for vy in range(1, max_vy):
             yield vx, vy
 
 
-def velocities_2(area):
-    # some examples from the task that relate to test.1.txt
-    # for vx, vy in [(14,-2), (30,-9), (9,-2)]:
-    #     yield vx, vy
-
-    # for now just brute force solution
-    maxx, miny = area.br
-    for vx in range(0, 1+maxx):
-        for vy in range(miny, 100):
+def velocities_p2_1(area):
+    min_vx, max_vx = get_vx_range(area)
+    # _, miny = area.br
+    for vx in range(min_vx, 1+max_vx):
+        for vy in range(area.lower_y, 100):
             yield vx, vy
 
 
+@utils.mytimeit
 def run_simulations(area, velocities) -> Tuple[Probe, int]:
     best = None
+    c_probes = 0
     c_successful_probes = 0
     for vx, vy in velocities():
+        c_probes += 1
         probe = Probe(vx, vy)
         success = launch(probe, area)
         if success:
             c_successful_probes += 1
-            # print("Success? {} with initial velocity {} reaches max altitude {}:".format(
-            #     success, (vx,vy), probe.max_altitude))
+            if DEBUG > 1:
+                print("Success? {} with initial velocity {} reaches max altitude {}:".format(
+                    success, (vx,vy), probe.max_altitude))
             if not best or best.max_altitude < probe.max_altitude:
                 best = probe
-    # print("Total successful probes", c_successful_probes)
+    if DEBUG > 0:
+        print("Probes total/successful: {}/{}".format(
+            c_probes, c_successful_probes))
     return best, c_successful_probes
 
 
 def solve_p1(lines: List[str]) -> int:
     """Solution to the 1st part of the challenge"""
     area = TargetArea.from_text(lines[0])
-    best, _ = run_simulations(area, lambda: velocities_1(area))
+    best, _ = run_simulations(area, lambda: velocities_p1_1(area))
     return best.max_altitude
 
 
 def solve_p2(lines: List[str]) -> int:
     """Solution to the 2nd part of the challenge"""
     area = TargetArea.from_text(lines[0])
-    _, total_successes = run_simulations(area, lambda: velocities_2(area))
+    _, total_successes = run_simulations(area, lambda: velocities_p2_1(area))
     return total_successes
 
 

@@ -1,10 +1,18 @@
 --- Tests ---
+Probes total/successful: 91/19
+Runtime[run_simulations]: 1583162 nsec
 T.0.p1: True 45 45
+Probes total/successful: 2750/112
+Runtime[run_simulations]: 258088388 nsec
 T.0.p2: True 112 112
 --- Day 17 p.1 ---
+Probes total/successful: 24531/257
+Runtime[run_simulations]: 3797965384 nsec
 True 4095 4095
 --- Day 17 p.2 ---
+Probes total/successful: 53862/3773
+Runtime[run_simulations]: 3022794796 nsec
 True 3773 3773
-real 9,64
-user 9,51
-sys 0,02
+real 7.13
+user 6.99
+sys 0.01
