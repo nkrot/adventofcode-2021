@@ -1,18 +1,18 @@
 --- Tests ---
-Probes total/successful: 91/19
-Runtime[run_simulations]: 1583162 nsec
+Probes total/successful: 81/19
+Runtime[run_simulations]: 1722311 nsec
 T.0.p1: True 45 45
-Probes total/successful: 2750/112
-Runtime[run_simulations]: 258088388 nsec
+Probes total/successful: 316/112
+Runtime[run_simulations]: 8288712 nsec
 T.0.p2: True 112 112
 --- Day 17 p.1 ---
-Probes total/successful: 24531/257
-Runtime[run_simulations]: 3797965384 nsec
+Probes total/successful: 20253/257
+Runtime[run_simulations]: 4500674583 nsec
 True 4095 4095
 --- Day 17 p.2 ---
-Probes total/successful: 53862/3773
-Runtime[run_simulations]: 3022794796 nsec
+Probes total/successful: 40270/3773
+Runtime[run_simulations]: 10246842741 nsec
 True 3773 3773
-real 7.13
-user 6.99
-sys 0.01
+real 14,80
+user 14,79
+sys 0,00
