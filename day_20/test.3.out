@@ -1,0 +1,20 @@
+--- Tests ---
+(3, 3) 0
+--- enhancing ---
+Initial image (5, 5)
+.....
+.....
+.....
+.....
+.....
+
+Number of pixels to update 25
+Resulting image (5, 5)
+#####
+#####
+#####
+#####
+#####
+
+Number of lit pixels 25
+T.0.p1: False -43 25

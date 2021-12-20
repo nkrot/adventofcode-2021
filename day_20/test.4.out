@@ -1,0 +1,24 @@
+--- Tests ---
+(5, 5) 25
+--- enhancing ---
+Initial image (7, 7)
+.......
+.#####.
+.#####.
+.#####.
+.#####.
+.#####.
+.......
+
+Number of pixels to update 31
+Resulting image (7, 7)
+.######
+#.#####
+.....##
+.....##
+.....##
+.#....#
+##.....
+
+Number of lit pixels 22
+T.0.p1: False -43 22
