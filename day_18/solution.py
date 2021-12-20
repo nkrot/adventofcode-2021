@@ -228,10 +228,10 @@ class SN(object):
         while changed:
             changed = False
 
-            numbers = self._get_numbers()
             if DEBUG > 1:
                 print("--- reducing ---")
                 print(self)
+                numbers = self._get_numbers()
                 print([n.value for n in numbers])
 
             changed = self._do_explode()
@@ -243,7 +243,6 @@ class SN(object):
         return self
 
     def _do_explode(self) -> bool:
-        # TODO: transform to recursion?
         changed = False
         numbers = self._get_numbers()
         for i, num_i in enumerate(numbers):
