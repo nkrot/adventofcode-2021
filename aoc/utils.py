@@ -9,7 +9,7 @@ def load_input(fname: Optional[str] = None) -> List[str]:
     lines = []
     with open(fname) as fd:
         for line in fd:
-            lines.append(line.strip())
+            lines.append(line.rstrip('\r\n'))
     return lines
 
 

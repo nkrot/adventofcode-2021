@@ -99,7 +99,7 @@ def count_paths(graph, PathClass) -> int:
     full_paths = []
     c_full_paths = 0
 
-    # BFS to build all paths betweeb <start> and <end> nodes
+    # BFS to build all paths between <start> and <end> nodes
     while paths:
         path = paths.popleft()
         for trg in graph[path.last]:
